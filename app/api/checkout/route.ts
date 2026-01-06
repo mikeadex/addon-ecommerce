@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
+import { getServerSession } from 'next-auth/next';
 import { prisma } from '@/lib/prisma';
 import { authOptions } from '@/lib/auth';
 import Stripe from 'stripe';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-12-18.acacia',
+  apiVersion: '2025-12-15.clover',
 });
 
 export async function POST(request: NextRequest) {
@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
     const session = await getServerSession(authOptions);
     const sessionId = request.cookies.get('cart_session_id')?.value;
 
-    if (!session?.user?.email && !sessionId) {
+    if (!session?.user?.id && !sessionId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -27,14 +27,13 @@ export async function POST(request: NextRequest) {
 
     // Get user cart
     const cart = await prisma.cart.findFirst({
-      where: session?.user?.email
-        ? { userId: session.user.email }
+      where: session?.user?.id
+        ? { userId: session.user.id }
         : { sessionId },
       include: {
         items: {
           include: {
             product: true,
-            variant: true,
           },
         },
       },
@@ -46,7 +45,15 @@ export async function POST(request: NextRequest) {
 
     // Validate stock for all items
     for (const item of cart.items) {
-      const availableStock = item.variant?.quantity || item.product.quantity;
+      let availableStock = item.product.quantity;
+      
+      if (item.variantId) {
+        const variant = await prisma.productVariant.findUnique({
+          where: { id: item.variantId },
+        });
+        availableStock = variant?.quantity || 0;
+      }
+      
       if (availableStock < item.quantity) {
         return NextResponse.json(
           {
@@ -79,7 +86,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Check expiry
-      if (coupon.expiresAt && coupon.expiresAt < new Date()) {
+      if (coupon.endDate && coupon.endDate < new Date()) {
         return NextResponse.json(
           { error: 'Coupon has expired' },
           { status: 400 }
@@ -100,29 +107,29 @@ export async function POST(request: NextRequest) {
       }
 
       // Check minimum order value
-      if (coupon.minOrderValue && subtotal < coupon.minOrderValue) {
+      if (coupon.minPurchase && subtotal < coupon.minPurchase) {
         return NextResponse.json(
           {
-            error: `Minimum order value of $${coupon.minOrderValue} required`,
+            error: `Minimum order value of $${coupon.minPurchase} required`,
           },
           { status: 400 }
         );
       }
 
       // Calculate discount
-      if (coupon.type === 'PERCENTAGE') {
-        discount = (subtotal * coupon.value) / 100;
+      if (coupon.discountType === 'PERCENTAGE') {
+        discount = (subtotal * coupon.discountValue) / 100;
         if (coupon.maxDiscount) {
           discount = Math.min(discount, coupon.maxDiscount);
         }
-      } else if (coupon.type === 'FIXED') {
-        discount = coupon.value;
+      } else if (coupon.discountType === 'FIXED') {
+        discount = coupon.discountValue;
       }
     }
 
     // Calculate shipping (simplified - flat rate for now)
     const shippingCost =
-      coupon?.type === 'FREE_SHIPPING' ? 0 : subtotal > 100 ? 0 : 10;
+      coupon?.discountType === 'FREE_SHIPPING' ? 0 : subtotal > 100 ? 0 : 10;
 
     const total = subtotal - discount + shippingCost;
 
@@ -134,64 +141,69 @@ export async function POST(request: NextRequest) {
         enabled: true,
       },
       metadata: {
-        userId: session?.user?.email || sessionId || '',
+        userId: session?.user?.id || sessionId || '',
       },
     });
 
-    // Create order
-    const order = await prisma.order.create({
-      data: {
-        userId: session?.user?.email,
-        sessionId: !session?.user?.email ? sessionId : null,
-        orderNumber: `ORD-${Date.now()}`,
-        status: 'PENDING',
-        subtotal,
-        discount,
-        shippingCost,
-        tax: 0, // TODO: Calculate tax based on address
-        total,
-        paymentMethod,
-        paymentStatus: 'PENDING',
-        stripePaymentIntentId: paymentIntent.id,
-        shippingAddressId,
-        billingAddressId: billingAddressId || shippingAddressId,
-        couponId: coupon?.id,
-        items: {
-          create: cart.items.map((item) => ({
-            productId: item.productId,
-            variantId: item.variantId,
-            name: item.product.name,
-            price: item.price,
-            quantity: item.quantity,
-          })),
+    // Use transaction to ensure atomicity
+    const order = await prisma.$transaction(async (tx) => {
+      // Create order
+      const newOrder = await tx.order.create({
+        data: {
+          userId: session?.user?.id,
+          orderNumber: `ORD-${Date.now()}`,
+          status: 'PENDING',
+          subtotal,
+          discount,
+          shipping: shippingCost,
+          tax: 0,
+          total,
+          paymentMethod,
+          paymentStatus: 'PENDING',
+          paymentIntentId: paymentIntent.id,
+          shippingAddressId,
+          billingAddressId: billingAddressId || shippingAddressId,
+          couponId: coupon?.id,
+          items: {
+            create: cart.items.map((item) => ({
+              productId: item.productId,
+              variantId: item.variantId,
+              name: item.product.name,
+              price: item.price,
+              quantity: item.quantity,
+              total: item.price * item.quantity,
+            })),
+          },
         },
-      },
-      include: {
-        items: true,
-        shippingAddress: true,
-        billingAddress: true,
-        coupon: true,
-      },
-    });
+        include: {
+          items: true,
+          shippingAddress: true,
+          billingAddress: true,
+          coupon: true,
+        },
+      });
 
-    // Reduce stock for all items
-    for (const item of cart.items) {
-      if (item.variantId) {
-        await prisma.productVariant.update({
-          where: { id: item.variantId },
-          data: { quantity: { decrement: item.quantity } },
-        });
-      } else {
-        await prisma.product.update({
-          where: { id: item.productId },
-          data: { quantity: { decrement: item.quantity } },
-        });
+      // Reduce stock for all items
+      for (const item of cart.items) {
+        if (item.variantId) {
+          await tx.productVariant.update({
+            where: { id: item.variantId },
+            data: { quantity: { decrement: item.quantity } },
+          });
+        } else {
+          await tx.product.update({
+            where: { id: item.productId },
+            data: { quantity: { decrement: item.quantity } },
+          });
+        }
       }
-    }
 
-    // Clear cart
-    await prisma.cartItem.deleteMany({
-      where: { cartId: cart.id },
+      // Clear cart
+      await tx.cartItem.deleteMany({
+        where: { cartId: cart.id },
+      });
+
+      return newOrder;
     });
 
     return NextResponse.json({

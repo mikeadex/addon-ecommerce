@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
+import { getServerSession } from 'next-auth/next';
 import { prisma } from '@/lib/prisma';
 import { authOptions } from '@/lib/auth';
 
@@ -14,8 +14,8 @@ export async function GET(request: NextRequest) {
     }
 
     const cart = await prisma.cart.findFirst({
-      where: session?.user?.email
-        ? { userId: session.user.email }
+      where: session?.user?.id
+        ? { userId: session.user.id }
         : { sessionId },
       include: {
         items: {
@@ -24,11 +24,10 @@ export async function GET(request: NextRequest) {
               include: {
                 images: {
                   take: 1,
-                  orderBy: { order: 'asc' },
+                  orderBy: { position: 'asc' },
                 },
               },
             },
-            variant: true,
           },
         },
       },
@@ -65,8 +64,8 @@ export async function POST(request: NextRequest) {
     let sessionId = request.cookies.get('cart_session_id')?.value;
 
     // Generate session ID for guest users
-    if (!session?.user?.email && !sessionId) {
-      sessionId = `guest_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
+    if (!session?.user?.id && !sessionId) {
+      sessionId = crypto.randomUUID();
     }
 
     const body = await request.json();
@@ -101,16 +100,16 @@ export async function POST(request: NextRequest) {
 
     // Find or create cart
     let cart = await prisma.cart.findFirst({
-      where: session?.user?.email
-        ? { userId: session.user.email }
+      where: session?.user?.id
+        ? { userId: session.user.id }
         : { sessionId },
     });
 
     if (!cart) {
       cart = await prisma.cart.create({
         data: {
-          userId: session?.user?.email,
-          sessionId: !session?.user?.email ? sessionId : null,
+          userId: session?.user?.id,
+          sessionId: !session?.user?.id ? sessionId : null,
         },
       });
     }
@@ -154,7 +153,7 @@ export async function POST(request: NextRequest) {
     const response = NextResponse.json({ success: true });
 
     // Set session cookie for guest users
-    if (!session?.user?.email && sessionId) {
+    if (!session?.user?.id && sessionId) {
       response.cookies.set('cart_session_id', sessionId, {
         httpOnly: true,
         sameSite: 'lax',

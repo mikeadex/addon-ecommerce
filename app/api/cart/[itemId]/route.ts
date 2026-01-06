@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
+import { getServerSession } from 'next-auth/next';
 import { prisma } from '@/lib/prisma';
 import { authOptions } from '@/lib/auth';
 
 // Update cart item quantity
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { itemId: string } }
+  { params }: { params: Promise<{ itemId: string }> }
 ) {
   try {
+    const { itemId } = await params;
     const session = await getServerSession(authOptions);
     const sessionId = request.cookies.get('cart_session_id')?.value;
 
@@ -28,11 +29,9 @@ export async function PATCH(
 
     // Verify item belongs to user's cart
     const item = await prisma.cartItem.findUnique({
-      where: { id: params.itemId },
+      where: { id: itemId },
       include: {
         cart: true,
-        product: true,
-        variant: true,
       },
     });
 
@@ -40,16 +39,28 @@ export async function PATCH(
       return NextResponse.json({ error: 'Item not found' }, { status: 404 });
     }
 
-    const isOwner = session?.user?.email
-      ? item.cart.userId === session.user.email
+    const isOwner = session?.user?.id
+      ? item.cart.userId === session.user.id
       : item.cart.sessionId === sessionId;
 
     if (!isOwner) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Check stock
-    const availableStock = item.variant?.quantity || item.product.quantity;
+    // Get product/variant to check stock
+    let availableStock = 0;
+    if (item.variantId) {
+      const variant = await prisma.productVariant.findUnique({
+        where: { id: item.variantId },
+      });
+      availableStock = variant?.quantity || 0;
+    } else {
+      const product = await prisma.product.findUnique({
+        where: { id: item.productId },
+      });
+      availableStock = product?.quantity || 0;
+    }
+
     if (availableStock < quantity) {
       return NextResponse.json(
         { error: 'Insufficient stock' },
@@ -58,7 +69,7 @@ export async function PATCH(
     }
 
     await prisma.cartItem.update({
-      where: { id: params.itemId },
+      where: { id: itemId },
       data: { quantity },
     });
 
@@ -75,9 +86,10 @@ export async function PATCH(
 // Remove cart item
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { itemId: string } }
+  { params }: { params: Promise<{ itemId: string }> }
 ) {
   try {
+    const { itemId } = await params;
     const session = await getServerSession(authOptions);
     const sessionId = request.cookies.get('cart_session_id')?.value;
 
@@ -87,7 +99,7 @@ export async function DELETE(
 
     // Verify item belongs to user's cart
     const item = await prisma.cartItem.findUnique({
-      where: { id: params.itemId },
+      where: { id: itemId },
       include: { cart: true },
     });
 
@@ -95,8 +107,8 @@ export async function DELETE(
       return NextResponse.json({ error: 'Item not found' }, { status: 404 });
     }
 
-    const isOwner = session?.user?.email
-      ? item.cart.userId === session.user.email
+    const isOwner = session?.user?.id
+      ? item.cart.userId === session.user.id
       : item.cart.sessionId === sessionId;
 
     if (!isOwner) {
@@ -104,7 +116,7 @@ export async function DELETE(
     }
 
     await prisma.cartItem.delete({
-      where: { id: params.itemId },
+      where: { id: itemId },
     });
 
     return NextResponse.json({ success: true });

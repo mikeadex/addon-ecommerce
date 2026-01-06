@@ -6,7 +6,7 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const product = await prisma.product.findUnique({
+    const product = await prisma.product.findFirst({
       where: { 
         id: params.id,
         status: 'ACTIVE',
@@ -18,7 +18,6 @@ export async function GET(
         },
         variants: true,
         reviews: {
-          where: { isApproved: true },
           include: {
             user: {
               select: {
@@ -42,7 +41,7 @@ export async function GET(
 
     // Calculate average rating
     const avgRating = await prisma.review.aggregate({
-      where: { productId: params.id, isApproved: true },
+      where: { productId: params.id },
       _avg: { rating: true },
       _count: true,
     });
@@ -65,7 +64,7 @@ export async function GET(
 
     return NextResponse.json({
       ...product,
-      averageRating: avgRating._avg.rating || 0,
+      averageRating: avgRating._avg?.rating || 0,
       reviewCount: avgRating._count || 0,
       relatedProducts,
     });

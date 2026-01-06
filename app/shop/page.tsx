@@ -10,6 +10,7 @@ interface Product {
   name: string;
   slug: string;
   price: number;
+  compareAtPrice?: number;
   images: { url: string }[];
   category: { name: string };
   averageRating: number;
@@ -46,9 +47,19 @@ export default function ShopPage() {
     try {
       const res = await fetch('/api/categories');
       const data = await res.json();
-      setCategories(data);
+      
+      // Handle error response
+      if (data.error) {
+        console.error('API Error:', data.error);
+        setCategories([]);
+        return;
+      }
+      
+      // Ensure data is an array
+      setCategories(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Error fetching categories:', error);
+      setCategories([]);
     }
   };
 

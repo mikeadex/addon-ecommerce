@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { Package, DollarSign, ShoppingCart, Users } from 'lucide-react';
 
 export default function AdminDashboard() {
@@ -86,18 +87,18 @@ export default function AdminDashboard() {
           <div className="bg-white rounded-lg shadow p-6">
             <h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
             <div className="space-y-3">
-              <button className="w-full text-left px-4 py-3 bg-blue-50 hover:bg-blue-100 rounded-lg text-blue-700 font-medium">
-                Add New Product
-              </button>
-              <button className="w-full text-left px-4 py-3 bg-green-50 hover:bg-green-100 rounded-lg text-green-700 font-medium">
+              <Link href="/admin/products" className="block w-full text-left px-4 py-3 bg-blue-50 hover:bg-blue-100 rounded-lg text-blue-700 font-medium">
+                Manage Products
+              </Link>
+              <Link href="/admin/orders" className="block w-full text-left px-4 py-3 bg-green-50 hover:bg-green-100 rounded-lg text-green-700 font-medium">
                 View All Orders
-              </button>
-              <button className="w-full text-left px-4 py-3 bg-purple-50 hover:bg-purple-100 rounded-lg text-purple-700 font-medium">
-                Manage Categories
-              </button>
-              <button className="w-full text-left px-4 py-3 bg-yellow-50 hover:bg-yellow-100 rounded-lg text-yellow-700 font-medium">
-                View Customers
-              </button>
+              </Link>
+              <Link href="/admin/coupons" className="block w-full text-left px-4 py-3 bg-purple-50 hover:bg-purple-100 rounded-lg text-purple-700 font-medium">
+                Manage Coupons
+              </Link>
+              <Link href="/shop" className="block w-full text-left px-4 py-3 bg-yellow-50 hover:bg-yellow-100 rounded-lg text-yellow-700 font-medium">
+                View Store
+              </Link>
             </div>
           </div>
 

@@ -19,15 +19,15 @@ interface Product {
   name: string;
   description: string;
   price: number;
-  stock: number;
-  images: { url: string; alt: string }[];
+  quantity: number;
+  images: { url: string; altText?: string | null }[];
   category: { name: string };
   variants: {
     id: string;
     name: string;
     sku: string;
     price: number;
-    stock: number;
+    quantity: number;
     options: { name: string; value: string }[];
   }[];
   reviews: {
@@ -48,7 +48,7 @@ interface Product {
   }[];
 }
 
-export default function ProductPage({ params }: { params: { slug: string } }) {
+export default function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
   const router = useRouter();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
@@ -56,10 +56,19 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
   const [addingToCart, setAddingToCart] = useState(false);
+  const [slug, setSlug] = useState<string>('');
 
   useEffect(() => {
-    fetchProduct();
-  }, [params.slug]);
+    params.then((p) => {
+      setSlug(p.slug);
+    });
+  }, [params]);
+
+  useEffect(() => {
+    if (slug) {
+      fetchProduct();
+    }
+  }, [slug]);
 
   const fetchProduct = async () => {
     try {
@@ -67,7 +76,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
       const res = await fetch('/api/products');
       const data = await res.json();
       const foundProduct = data.products.find(
-        (p: any) => p.slug === params.slug
+        (p: any) => p.slug === slug
       );
 
       if (foundProduct) {
@@ -139,7 +148,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
     ? product.variants.find((v) => v.id === selectedVariant)
     : null;
   const currentPrice = currentVariant?.price || product.price;
-  const currentStock = currentVariant?.stock || product.stock;
+  const currentStock = currentVariant?.quantity || product.quantity;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -157,14 +166,20 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
         <div className="grid md:grid-cols-2 gap-12 bg-white rounded-lg shadow-sm p-8">
           {/* Images */}
           <div>
-            <div className="relative h-96 bg-gray-200 rounded-lg mb-4">
-              {product.images[selectedImage] && (
+            <div className="relative h-96 bg-gray-200 rounded-lg mb-4 flex items-center justify-center">
+              {product.images[selectedImage] ? (
                 <Image
                   src={product.images[selectedImage].url}
-                  alt={product.images[selectedImage].alt || product.name}
+                  alt={product.images[selectedImage].altText || product.name}
                   fill
                   className="object-cover rounded-lg"
+                  unoptimized
                 />
+              ) : (
+                <div className="text-gray-400 text-center">
+                  <div className="text-6xl mb-2">📦</div>
+                  <p>No image available</p>
+                </div>
               )}
             </div>
             <div className="grid grid-cols-4 gap-4">
@@ -180,9 +195,10 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
                 >
                   <Image
                     src={image.url}
-                    alt={image.alt || product.name}
+                    alt={image.altText || product.name}
                     fill
                     className="object-cover rounded"
+                    unoptimized
                   />
                 </button>
               ))}
@@ -361,6 +377,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
                         alt={related.name}
                         fill
                         className="object-cover"
+                        unoptimized
                       />
                     )}
                   </div>

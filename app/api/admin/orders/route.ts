@@ -7,23 +7,38 @@ export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
 
-    if (!session?.user?.id) {
+    if (!session?.user?.id || session.user.role !== 'ADMIN') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const searchParams = request.nextUrl.searchParams;
     const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '10');
+    const limit = parseInt(searchParams.get('limit') || '20');
     const skip = (page - 1) * limit;
+    const status = searchParams.get('status');
+
+    const where: any = {};
+    if (status) {
+      where.status = status;
+    }
 
     const [orders, total] = await Promise.all([
       prisma.order.findMany({
-        where: { userId: session.user.id },
+        where,
         include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
           items: {
             include: {
               product: {
-                include: {
+                select: {
+                  id: true,
+                  name: true,
                   images: {
                     take: 1,
                     orderBy: { position: 'asc' },
@@ -33,14 +48,13 @@ export async function GET(request: NextRequest) {
             },
           },
           shippingAddress: true,
+          billingAddress: true,
         },
         orderBy: { createdAt: 'desc' },
         skip,
         take: limit,
       }),
-      prisma.order.count({
-        where: { userId: session.user.id },
-      }),
+      prisma.order.count({ where }),
     ]);
 
     return NextResponse.json({
