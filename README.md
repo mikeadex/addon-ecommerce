@@ -1,22 +1,68 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# E-Commerce Addon
 
-## Getting Started
+A modern, full-featured e-commerce system built with Next.js 16, Prisma, PostgreSQL, and Stripe.
 
-First, run the development server:
+## Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+### 🛍️ Customer Features
+- **Product Catalog**: Browse products with advanced filtering and search
+- **Product Details**: View detailed product information with images, variants, and reviews
+- **Shopping Cart**: Add products to cart with quantity management
+- **Guest Checkout**: Shop without account creation (session-based cart)
+- **Order Management**: View order history and track orders
+- **Coupon System**: Apply discount coupons (percentage, fixed, free shipping)
+- **Product Reviews**: Rate and review purchased products
+- **Wishlist**: Save products for later
+- **Responsive Design**: Works beautifully on all devices
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 🔧 Technical Features
+- **Product Variants**: Support for product options (size, color, etc.)
+- **Inventory Management**: Real-time stock tracking
+- **Payment Processing**: Stripe integration with PaymentIntents
+- **Authentication**: NextAuth with credential provider
+- **Multi-role System**: Customer, Admin, and Vendor roles
+- **Image Management**: Multiple product images with ordering
+- **Category Hierarchy**: Nested category support
+- **Order Status Tracking**: From pending to delivered
+- **Address Management**: Multiple shipping/billing addresses
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Tech Stack
+
+- **Framework**: Next.js 16.1.1 (App Router)
+- **Database**: PostgreSQL with Prisma ORM
+- **Authentication**: NextAuth.js
+- **Payments**: Stripe
+- **Styling**: Tailwind CSS
+- **Icons**: Lucide React
+- **Language**: TypeScript
+
+## Quick Start
+
+1. **Install dependencies**:
+   ```bash
+   npm install
+   ```
+
+2. **Setup database** (already done):
+   ```bash
+   npm run prisma:generate
+   ```
+
+3. **Start development server**:
+   ```bash
+   npm run dev
+   ```
+
+   Open [http://localhost:3001](http://localhost:3001)
+
+## Test Accounts
+
+- **Admin**: admin@shop.com / admin123
+- **Customer**: customer@shop.com / admin123
+
+## Sample Products
+
+8 products across 4 categories with realistic pricing and images
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
