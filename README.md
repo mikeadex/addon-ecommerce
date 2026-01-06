@@ -5,6 +5,7 @@ A modern, full-featured e-commerce system built with Next.js 16, Prisma, Postgre
 ## Features
 
 ### 🛍️ Customer Features
+
 - **Product Catalog**: Browse products with advanced filtering and search
 - **Product Details**: View detailed product information with images, variants, and reviews
 - **Shopping Cart**: Add products to cart with quantity management
@@ -16,6 +17,7 @@ A modern, full-featured e-commerce system built with Next.js 16, Prisma, Postgre
 - **Responsive Design**: Works beautifully on all devices
 
 ### 🔧 Technical Features
+
 - **Product Variants**: Support for product options (size, color, etc.)
 - **Inventory Management**: Real-time stock tracking
 - **Payment Processing**: Stripe integration with PaymentIntents
@@ -39,16 +41,19 @@ A modern, full-featured e-commerce system built with Next.js 16, Prisma, Postgre
 ## Quick Start
 
 1. **Install dependencies**:
+
    ```bash
    npm install
    ```
 
 2. **Setup database** (already done):
+
    ```bash
    npm run prisma:generate
    ```
 
 3. **Start development server**:
+
    ```bash
    npm run dev
    ```
@@ -62,7 +67,48 @@ A modern, full-featured e-commerce system built with Next.js 16, Prisma, Postgre
 
 ## Sample Products
 
-8 products across 4 categories with realistic pricing and images
+**20 products** across 4 categories with realistic pricing and images:
+
+### Electronics (7 products)
+
+- Premium Wireless Headphones ($299.99)
+- Smart Watch Pro ($399.99)
+- Laptop Backpack Pro ($89.99)
+- Mechanical Gaming Keyboard ($149.99)
+- Wireless Mouse Ergonomic ($39.99)
+- Bluetooth Speaker Portable ($89.99)
+- Smart LED Light Bulb ($19.99)
+
+### Clothing (5 products)
+
+- Slim Fit Cotton T-Shirt ($29.99)
+- Leather Wallet Bifold ($44.99)
+- Denim Jacket Classic ($79.99)
+- Canvas Tote Bag Large ($24.99)
+- Sunglasses Polarized Sport ($59.99)
+
+### Home & Living (4 products)
+
+- Modern Table Lamp ($79.99)
+- Ceramic Coffee Mug Set ($39.99)
+- Throw Blanket Cozy ($54.99)
+- Smart LED Light Bulb ($19.99)
+
+### Sports & Outdoors (5 products)
+
+- Yoga Mat Premium ($49.99)
+- Running Shoes Ultra ($129.99)
+- Stainless Steel Water Bottle ($34.99)
+- Resistance Bands Set ($29.99)
+- Sunglasses Polarized Sport ($59.99)
+
+All products include:
+
+- Multiple high-quality images
+- Product variants (sizes, colors, etc.)
+- Detailed descriptions
+- Stock management
+- Featured items marked
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 

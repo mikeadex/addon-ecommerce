@@ -66,10 +66,20 @@ export default function ShopPage() {
 
       const res = await fetch(`/api/products?${params}`);
       const data = await res.json();
-      setProducts(data.products);
-      setTotalPages(data.pagination.totalPages);
+      
+      if (data.error) {
+        console.error('API Error:', data.error);
+        setProducts([]);
+        setTotalPages(1);
+        return;
+      }
+      
+      setProducts(data.products || []);
+      setTotalPages(data.pagination?.totalPages || 1);
     } catch (error) {
       console.error('Error fetching products:', error);
+      setProducts([]);
+      setTotalPages(1);
     } finally {
       setLoading(false);
     }
@@ -96,25 +106,25 @@ export default function ShopPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       {/* Header */}
-      <header className="bg-white shadow-sm sticky top-0 z-10">
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-10 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
-            <Link href="/" className="text-2xl font-bold text-gray-900">
+            <Link href="/" className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
               Shop
             </Link>
             <div className="flex items-center gap-4">
               <Link
                 href="/cart"
-                className="flex items-center gap-2 text-gray-700 hover:text-gray-900"
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
               >
-                <ShoppingCart className="w-6 h-6" />
+                <ShoppingCart className="w-5 h-5" />
                 <span className="font-medium">Cart</span>
               </Link>
               <Link
                 href="/orders"
-                className="text-gray-700 hover:text-gray-900 font-medium"
+                className="text-gray-700 hover:text-gray-900 font-medium px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors"
               >
                 Orders
               </Link>
@@ -130,7 +140,7 @@ export default function ShopPage() {
                 placeholder="Search products..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm"
               />
             </div>
           </div>
@@ -141,22 +151,22 @@ export default function ShopPage() {
         <div className="flex gap-8">
           {/* Sidebar Filters */}
           <aside className="w-64 flex-shrink-0">
-            <div className="bg-white rounded-lg shadow-sm p-6 sticky top-24">
-              <div className="flex items-center gap-2 mb-4">
-                <Filter className="w-5 h-5" />
+            <div className="bg-white rounded-xl shadow-sm p-6 sticky top-24">
+              <div className="flex items-center gap-2 mb-6">
+                <Filter className="w-5 h-5 text-blue-600" />
                 <h2 className="text-lg font-semibold">Filters</h2>
               </div>
 
               {/* Categories */}
               <div className="mb-6">
-                <h3 className="font-medium mb-2">Category</h3>
+                <h3 className="font-medium mb-3 text-gray-900">Category</h3>
                 <div className="space-y-2">
                   <button
                     onClick={() => setSelectedCategory('')}
-                    className={`block w-full text-left px-3 py-2 rounded ${
+                    className={`block w-full text-left px-4 py-2.5 rounded-lg transition-colors ${
                       !selectedCategory
-                        ? 'bg-blue-50 text-blue-600'
-                        : 'hover:bg-gray-50'
+                        ? 'bg-blue-50 text-blue-700 font-medium'
+                        : 'hover:bg-gray-50 text-gray-700'
                     }`}
                   >
                     All Products
@@ -165,13 +175,18 @@ export default function ShopPage() {
                     <button
                       key={cat.id}
                       onClick={() => setSelectedCategory(cat.id)}
-                      className={`block w-full text-left px-3 py-2 rounded ${
+                      className={`block w-full text-left px-4 py-2.5 rounded-lg transition-colors ${
                         selectedCategory === cat.id
-                          ? 'bg-blue-50 text-blue-600'
-                          : 'hover:bg-gray-50'
+                          ? 'bg-blue-50 text-blue-700 font-medium'
+                          : 'hover:bg-gray-50 text-gray-700'
                       }`}
                     >
-                      {cat.name} ({cat._count.products})
+                      <span className="flex items-center justify-between">
+                        <span>{cat.name}</span>
+                        <span className="text-xs bg-gray-100 px-2 py-0.5 rounded-full">
+                          {cat._count.products}
+                        </span>
+                      </span>
                     </button>
                   ))}
                 </div>
@@ -179,7 +194,7 @@ export default function ShopPage() {
 
               {/* Price Range */}
               <div className="mb-6">
-                <h3 className="font-medium mb-2">Price Range</h3>
+                <h3 className="font-medium mb-3 text-gray-900">Price Range</h3>
                 <div className="flex gap-2">
                   <input
                     type="number"
@@ -188,7 +203,7 @@ export default function ShopPage() {
                     onChange={(e) =>
                       setPriceRange({ ...priceRange, min: e.target.value })
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                   <input
                     type="number"
@@ -197,18 +212,18 @@ export default function ShopPage() {
                     onChange={(e) =>
                       setPriceRange({ ...priceRange, max: e.target.value })
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
               </div>
 
               {/* Sort By */}
               <div>
-                <h3 className="font-medium mb-2">Sort By</h3>
+                <h3 className="font-medium mb-3 text-gray-900">Sort By</h3>
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
                 >
                   <option value="createdAt">Newest</option>
                   <option value="price">Price: Low to High</option>
@@ -222,11 +237,14 @@ export default function ShopPage() {
           <main className="flex-1">
             {loading ? (
               <div className="text-center py-12">
-                <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+                <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent"></div>
+                <p className="mt-4 text-gray-600">Loading products...</p>
               </div>
             ) : products.length === 0 ? (
-              <div className="text-center py-12">
-                <p className="text-gray-500">No products found</p>
+              <div className="text-center py-12 bg-white rounded-xl shadow-sm">
+                <ShoppingCart className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                <p className="text-xl font-medium text-gray-900 mb-2">No products found</p>
+                <p className="text-gray-500">Try adjusting your filters or search terms</p>
               </div>
             ) : (
               <>
@@ -234,32 +252,37 @@ export default function ShopPage() {
                   {products.map((product) => (
                     <div
                       key={product.id}
-                      className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow"
+                      className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 group"
                     >
                       <Link href={`/products/${product.slug}`}>
-                        <div className="relative h-64 bg-gray-200">
+                        <div className="relative h-64 bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
                           {product.images[0] && (
                             <Image
                               src={product.images[0].url}
                               alt={product.name}
                               fill
-                              className="object-cover"
+                              className="object-cover group-hover:scale-110 transition-transform duration-300"
                             />
+                          )}
+                          {product.compareAtPrice && (
+                            <div className="absolute top-3 right-3 bg-red-500 text-white px-3 py-1 rounded-full text-sm font-semibold">
+                              Sale
+                            </div>
                           )}
                         </div>
                       </Link>
-                      <div className="p-4">
+                      <div className="p-5">
                         <Link href={`/products/${product.slug}`}>
-                          <h3 className="font-semibold text-lg mb-1 hover:text-blue-600">
+                          <h3 className="font-semibold text-lg mb-1 hover:text-blue-600 transition-colors line-clamp-2">
                             {product.name}
                           </h3>
                         </Link>
-                        <p className="text-sm text-gray-500 mb-2">
+                        <p className="text-sm text-gray-500 mb-3">
                           {product.category.name}
                         </p>
-                        <div className="flex items-center gap-1 mb-2">
+                        <div className="flex items-center gap-1 mb-3">
                           <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                          <span className="text-sm font-medium">
+                          <span className="text-sm font-medium text-gray-900">
                             {product.averageRating.toFixed(1)}
                           </span>
                           <span className="text-sm text-gray-500">
@@ -267,12 +290,19 @@ export default function ShopPage() {
                           </span>
                         </div>
                         <div className="flex items-center justify-between">
-                          <span className="text-2xl font-bold text-gray-900">
-                            ${product.price.toFixed(2)}
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-2xl font-bold text-gray-900">
+                              ${product.price.toFixed(2)}
+                            </span>
+                            {product.compareAtPrice && (
+                              <span className="text-sm text-gray-400 line-through">
+                                ${product.compareAtPrice.toFixed(2)}
+                              </span>
+                            )}
+                          </div>
                           <button
                             onClick={() => addToCart(product.id)}
-                            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 shadow-sm hover:shadow"
                           >
                             <ShoppingCart className="w-4 h-4" />
                             Add
@@ -285,21 +315,36 @@ export default function ShopPage() {
 
                 {/* Pagination */}
                 {totalPages > 1 && (
-                  <div className="flex justify-center gap-2 mt-8">
+                  <div className="flex justify-center items-center gap-2 mt-8">
                     <button
                       onClick={() => setPage((p) => Math.max(1, p - 1))}
                       disabled={page === 1}
-                      className="px-4 py-2 border border-gray-300 rounded disabled:opacity-50"
+                      className="px-4 py-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
                     >
                       Previous
                     </button>
-                    <span className="px-4 py-2">
-                      Page {page} of {totalPages}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      {[...Array(Math.min(totalPages, 5))].map((_, i) => {
+                        const pageNum = i + 1;
+                        return (
+                          <button
+                            key={pageNum}
+                            onClick={() => setPage(pageNum)}
+                            className={`px-4 py-2 rounded-lg transition-colors ${
+                              page === pageNum
+                                ? 'bg-blue-600 text-white'
+                                : 'border border-gray-300 hover:bg-gray-50'
+                            }`}
+                          >
+                            {pageNum}
+                          </button>
+                        );
+                      })}
+                    </div>
                     <button
                       onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                       disabled={page === totalPages}
-                      className="px-4 py-2 border border-gray-300 rounded disabled:opacity-50"
+                      className="px-4 py-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
                     >
                       Next
                     </button>

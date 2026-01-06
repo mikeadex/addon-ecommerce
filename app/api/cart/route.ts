@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    if (!product || product.status !== 'PUBLISHED') {
+    if (!product || product.status !== 'ACTIVE') {
       return NextResponse.json(
         { error: 'Product not found' },
         { status: 404 }
@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
     const price = variant?.price || product.price;
 
     // Check stock
-    const availableStock = variant?.stock || product.stock;
+    const availableStock = variant?.quantity || product.quantity;
     if (availableStock < quantity) {
       return NextResponse.json(
         { error: 'Insufficient stock' },

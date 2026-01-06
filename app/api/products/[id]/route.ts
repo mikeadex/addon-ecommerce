@@ -9,20 +9,14 @@ export async function GET(
     const product = await prisma.product.findUnique({
       where: { 
         id: params.id,
-        status: 'PUBLISHED',
-        isDeleted: false,
+        status: 'ACTIVE',
       },
       include: {
         category: true,
         images: {
-          orderBy: { order: 'asc' },
+          orderBy: { position: 'asc' },
         },
-        variants: {
-          where: { isDeleted: false },
-          include: {
-            options: true,
-          },
-        },
+        variants: true,
         reviews: {
           where: { isApproved: true },
           include: {
@@ -58,13 +52,12 @@ export async function GET(
       where: {
         categoryId: product.categoryId,
         id: { not: product.id },
-        status: 'PUBLISHED',
-        isDeleted: false,
+        status: 'ACTIVE',
       },
       include: {
         images: {
           take: 1,
-          orderBy: { order: 'asc' },
+          orderBy: { position: 'asc' },
         },
       },
       take: 4,

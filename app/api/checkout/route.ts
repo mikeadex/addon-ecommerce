@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
 
     // Validate stock for all items
     for (const item of cart.items) {
-      const availableStock = item.variant?.stock || item.product.stock;
+      const availableStock = item.variant?.quantity || item.product.quantity;
       if (availableStock < item.quantity) {
         return NextResponse.json(
           {
@@ -179,12 +179,12 @@ export async function POST(request: NextRequest) {
       if (item.variantId) {
         await prisma.productVariant.update({
           where: { id: item.variantId },
-          data: { stock: { decrement: item.quantity } },
+          data: { quantity: { decrement: item.quantity } },
         });
       } else {
         await prisma.product.update({
           where: { id: item.productId },
-          data: { stock: { decrement: item.quantity } },
+          data: { quantity: { decrement: item.quantity } },
         });
       }
     }

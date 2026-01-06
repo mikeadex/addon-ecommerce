@@ -16,8 +16,7 @@ export async function GET(request: NextRequest) {
 
     // Build where clause
     const where: any = {
-      status: 'PUBLISHED',
-      isDeleted: false,
+      status: 'ACTIVE',
     };
 
     if (category) {
@@ -44,13 +43,9 @@ export async function GET(request: NextRequest) {
         include: {
           category: true,
           images: {
-            orderBy: { order: 'asc' },
+            orderBy: { position: 'asc' },
           },
-          variants: {
-            include: {
-              options: true,
-            },
-          },
+          variants: true,
           _count: {
             select: { reviews: true },
           },

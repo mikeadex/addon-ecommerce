@@ -49,7 +49,7 @@ export async function PATCH(
     }
 
     // Check stock
-    const availableStock = item.variant?.stock || item.product.stock;
+    const availableStock = item.variant?.quantity || item.product.quantity;
     if (availableStock < quantity) {
       return NextResponse.json(
         { error: 'Insufficient stock' },
