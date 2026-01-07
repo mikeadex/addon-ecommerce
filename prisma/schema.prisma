@@ -202,13 +202,14 @@ model ProductVariant {
 // ============================================
 
 model Cart {
-  id         String     @id @default(cuid())
-  userId     String?    @unique
-  user       User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  sessionId  String?    @unique
-  items      CartItem[]
-  createdAt  DateTime   @default(now())
-  updatedAt  DateTime   @updatedAt
+  id                  String              @id @default(cuid())
+  userId              String?             @unique
+  user                User?               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessionId           String?             @unique
+  items               CartItem[]
+  recoveryEmails      CartRecoveryEmail[]
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
 
   @@map("carts")
 }
@@ -420,4 +421,67 @@ model WishlistItem {
 
   @@unique([userId, productId])
   @@map("wishlist_items")
+}
+
+// ============================================
+// SETTINGS & CONFIGURATION
+// ============================================
+
+model SystemSetting {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       String   @db.Text
+  category    String
+  isEncrypted Boolean  @default(false)
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([category])
+  @@map("system_settings")
+}
+
+// ============================================
+// NOTIFICATIONS & EMAIL TRACKING
+// ============================================
+
+model EmailLog {
+  id          String   @id @default(cuid())
+  to          String
+  subject     String
+  template    String
+  status      EmailStatus @default(PENDING)
+  sentAt      DateTime?
+  failedAt    DateTime?
+  error       String?   @db.Text
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  @@index([status])
+  @@index([createdAt])
+  @@map("email_logs")
+}
+
+enum EmailStatus {
+  PENDING
+  SENT
+  FAILED
+  BOUNCED
+}
+
+model CartRecoveryEmail {
+  id            String   @id @default(cuid())
+  cartId        String
+  cart          Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  emailType     String
+  sentAt        DateTime @default(now())
+  recoveryToken String   @unique
+  clickedAt     DateTime?
+  convertedAt   DateTime?
+  orderId       String?
+
+  @@index([cartId])
+  @@index([recoveryToken])
+  @@index([sentAt])
+  @@map("cart_recovery_emails")
 }
